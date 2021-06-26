@@ -19,5 +19,11 @@
             android:paddingStart="8dp"
             android:buttonTint="@android:color/holo_green_dark"
             tool:ignore="RtlSymmetry" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TextView" />
     </RelativeLayout>
 </androidx.cardview.widget.CardView>
