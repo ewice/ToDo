@@ -80,6 +80,8 @@ public class DetailActivity extends AppCompatActivity {
                 hour = calendar.get(Calendar.HOUR_OF_DAY);
                 min = calendar.get(Calendar.MINUTE);
             } else {
+                selectedDueDate.setVisibility(View.GONE);
+                selectedDueTime.setVisibility(View.GONE);
                 Date currentDate = new Date();
                 date = currentDate;
                 Calendar calendar = GregorianCalendar.getInstance();
@@ -105,6 +107,7 @@ public class DetailActivity extends AppCompatActivity {
             timeInMilli = selection;
             String date = DateFormat.format("dd.MM.yyyy", timeInMilli).toString();
             selectedDueDate.setText(date);
+            selectedDueDate.setVisibility(View.VISIBLE);
         });
 
         dueTimeWrapper.setOnClickListener(v -> materialTimePicker.show(getSupportFragmentManager(), "MATERIAL_TIME_PICKER"));
@@ -120,6 +123,7 @@ public class DetailActivity extends AppCompatActivity {
 
             String date = DateFormat.format("HH:mm", timeDate).toString();
             selectedDueTime.setText(date);
+            selectedDueTime.setVisibility(View.VISIBLE);
         });
 
         fabSave.setOnClickListener(v -> {

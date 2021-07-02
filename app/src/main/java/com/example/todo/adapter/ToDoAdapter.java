@@ -56,6 +56,8 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
             @SuppressLint("SimpleDateFormat") SimpleDateFormat sf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
             Date date = new Date(Long.parseLong(todo.getExpiry()));
             holder.todoDate.setText(sf.format(date));
+        } else {
+            holder.todoDate.setVisibility(View.GONE);
         }
 
         holder.todoCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
