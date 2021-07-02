@@ -3,6 +3,7 @@ package com.example.todo.adapter;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import com.example.todo.util.ApiHandler;
 import com.example.todo.util.DatabaseHandler;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -54,6 +56,8 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
             @SuppressLint("SimpleDateFormat") SimpleDateFormat sf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
             Date date = new Date(todo.getExpiry());
             holder.todoDate.setText(sf.format(date));
+            holder.todoDate.setVisibility(View.VISIBLE);
+            isExpired(todo, holder);
         } else {
             holder.todoDate.setVisibility(View.GONE);
         }
@@ -62,13 +66,11 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
             todo.setDone(isChecked);
             db.updateDone(todo.getId(), isChecked ? 1 : 0);
             apiHandler.updateTodo(todo.getId(), todo);
-            FavouriteExpirySort();
         });
         holder.todoFavorite.setOnCheckedChangeListener((buttonView, isChecked) -> {
             todo.setFavourite(isChecked);
             db.updateFavourite(todo.getId(), isChecked ? 1 : 0);
             apiHandler.updateTodo(todo.getId(), todo);
-            FavouriteExpirySort();
         });
     }
 
@@ -116,21 +118,10 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
         }
     }
 
-    // Sort Todos
-
-    public void FavouriteExpirySort() {
-        todoList.sort(Comparator
-                .comparing(Todo::isDone)
-                .thenComparing(Todo::isFavourite)
-                .thenComparingLong(Todo::getExpiry)
-                .reversed());
-    }
-
-    public void ExpiryFavouriteSort() {
-        todoList.sort(Comparator
-                .comparing(Todo::isDone)
-                .thenComparing(Todo::getExpiry)
-                .thenComparing(Todo::isFavourite)
-                .reversed());
+    // Expired
+    public void isExpired(Todo todo, ViewHolder holder) {
+        if (todo.getExpiry() < Calendar.getInstance().getTimeInMillis()) {
+            holder.todoDate.setTextColor(activity.getColor(R.color.teal_200));
+        }
     }
 }

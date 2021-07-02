@@ -103,7 +103,7 @@ public class ApiHandler {
         });
     }
 
-    public void deleteAllTodos(List<Todo> todoList) {
+    public void deleteAllTodosAndCreateNewAfter(List<Todo> todoList) {
         Call<Boolean> deleteAllTodos = apiInterface.deleteAllTodos();
         deleteAllTodos.enqueue(new Callback<Boolean>() {
             @Override
@@ -112,6 +112,21 @@ public class ApiHandler {
                 for (Todo todo : todoList) {
                     createTodo(todo);
                 }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Boolean> call, @NonNull Throwable t) {
+                System.out.println(t);
+            }
+        });
+    }
+
+    public void deleteAllTodos() {
+        Call<Boolean> deleteAllTodos = apiInterface.deleteAllTodos();
+        deleteAllTodos.enqueue(new Callback<Boolean>() {
+            @Override
+            public void onResponse(@NonNull Call<Boolean> call, @NonNull Response<Boolean> response) {
+                System.out.println("Delete all remote todos");
             }
 
             @Override
