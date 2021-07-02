@@ -17,7 +17,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.example.todo.MainActivity;
 import com.example.todo.R;
+import com.example.todo.adapter.ToDoAdapter;
 import com.example.todo.model.Todo;
 import com.example.todo.util.ApiHandler;
 import com.example.todo.util.DatabaseHandler;
@@ -121,4 +123,6 @@ public class AddNewTask extends BottomSheetDialogFragment {
         if(activity instanceof DialogCloseListener)
             ((DialogCloseListener)activity).handleDialogClose(dialog);
     }
+
+
 }

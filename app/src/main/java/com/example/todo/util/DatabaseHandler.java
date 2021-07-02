@@ -82,7 +82,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
                         todo.setName(cur.getString(cur.getColumnIndex(NAME)));
                         todo.setDescription(cur.getString(cur.getColumnIndex(DESCRIPTION)));
                         todo.setDone(cur.getInt(cur.getColumnIndex(DONE)) == 1);
-                        todo.setExpiry(cur.getString(cur.getColumnIndex(EXPIRY)));
+                        todo.setExpiry(cur.getLong(cur.getColumnIndex(EXPIRY)));
                         todo.setFavourite(cur.getInt(cur.getColumnIndex(FAVOURITE)) == 1);
                         todo.setContacts(Collections.singletonList(String.valueOf(cur.getColumnIndex(CONTACTS))));
                         taskList.add(todo);
@@ -99,9 +99,9 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         return taskList;
     }
 
-    public void updateStatus(long id, int status){
+    public void updateDone(long id, int done){
         ContentValues cv = new ContentValues();
-        cv.put(DONE, status);
+        cv.put(DONE, done);
         db.update(TODO_TABLE, cv, ID + "= ?", new String[] {String.valueOf(id)});
     }
 

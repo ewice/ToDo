@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -21,9 +20,9 @@ import com.example.todo.util.ApiHandler;
 import com.example.todo.util.DatabaseHandler;
 
 import java.text.SimpleDateFormat;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
 
@@ -45,16 +44,15 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
     }
 
     public void onBindViewHolder(ViewHolder holder, int position) {
-        db.openDatabase();
         Todo todo = todoList.get(position);
 
-        holder.todoCheckbox.setChecked(todo.isDone());
         holder.todoName.setText(todo.getName());
+        holder.todoCheckbox.setChecked(todo.isDone());
         holder.todoFavorite.setChecked(todo.isFavourite());
 
-        if (todo.getExpiry() != null) {
+        if (todo.getExpiry() > 0L) {
             @SuppressLint("SimpleDateFormat") SimpleDateFormat sf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            Date date = new Date(Long.parseLong(todo.getExpiry()));
+            Date date = new Date(todo.getExpiry());
             holder.todoDate.setText(sf.format(date));
         } else {
             holder.todoDate.setVisibility(View.GONE);
@@ -62,13 +60,15 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
 
         holder.todoCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             todo.setDone(isChecked);
-            db.updateStatus(todo.getId(), isChecked ? 1 : 0);
+            db.updateDone(todo.getId(), isChecked ? 1 : 0);
             apiHandler.updateTodo(todo.getId(), todo);
+            FavouriteExpirySort();
         });
         holder.todoFavorite.setOnCheckedChangeListener((buttonView, isChecked) -> {
             todo.setFavourite(isChecked);
             db.updateFavourite(todo.getId(), isChecked ? 1 : 0);
             apiHandler.updateTodo(todo.getId(), todo);
+            FavouriteExpirySort();
         });
     }
 
@@ -114,5 +114,23 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
             todoName = view.findViewById(R.id.todo_name);
             todoDate = view.findViewById(R.id.todo_date);
         }
+    }
+
+    // Sort Todos
+
+    public void FavouriteExpirySort() {
+        todoList.sort(Comparator
+                .comparing(Todo::isDone)
+                .thenComparing(Todo::isFavourite)
+                .thenComparingLong(Todo::getExpiry)
+                .reversed());
+    }
+
+    public void ExpiryFavouriteSort() {
+        todoList.sort(Comparator
+                .comparing(Todo::isDone)
+                .thenComparing(Todo::getExpiry)
+                .thenComparing(Todo::isFavourite)
+                .reversed());
     }
 }

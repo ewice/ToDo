@@ -20,7 +20,7 @@ public class Todo implements Serializable {
     private String description;
 
     @SerializedName("expiry")
-    private String expiry;
+    private long expiry;
 
     @SerializedName("favourite")
     private boolean favourite;
@@ -60,11 +60,11 @@ public class Todo implements Serializable {
         this.description = description;
     }
 
-    public String getExpiry() {
+    public long getExpiry() {
         return expiry;
     }
 
-    public void setExpiry(String expiry) {
+    public void setExpiry(long expiry) {
         this.expiry = expiry;
     }
 
@@ -75,6 +75,8 @@ public class Todo implements Serializable {
     public void setFavourite(boolean favourite) {
         this.favourite = favourite;
     }
+
+    public void addContact(String id) { contacts.add(id); }
 
     public List<String> getContacts() {
         return contacts;

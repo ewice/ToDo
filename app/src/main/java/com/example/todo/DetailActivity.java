@@ -3,7 +3,10 @@ package com.example.todo;
 import android.annotation.SuppressLint;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.text.format.DateFormat;
 import android.view.View;
 import android.widget.CheckBox;
@@ -35,6 +38,7 @@ public class DetailActivity extends AppCompatActivity {
 
     public static final String ARG_ITEM = "item";
     private ApiHandler apiHandler;
+    private Todo todo;
     private Date date;
     private long timeInMilli;
     private int min;
@@ -45,7 +49,7 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-        Todo todo = (Todo) getIntent().getSerializableExtra(ARG_ITEM);
+        todo = (Todo) getIntent().getSerializableExtra(ARG_ITEM);
         EditText itemName = findViewById(R.id.name);
         EditText itemDescription = findViewById(R.id.description);
         CheckBox itemDone = findViewById(R.id.checkbox_done);
@@ -54,6 +58,7 @@ public class DetailActivity extends AppCompatActivity {
         TextView selectedDueDate = findViewById(R.id.selected_due_date);
         CardView dueTimeWrapper = findViewById(R.id.due_time_wrapper);
         TextView selectedDueTime = findViewById(R.id.selected_due_time);
+        CardView contactWrapper = findViewById(R.id.contact_wrapper);
         FloatingActionButton fabSave = findViewById(R.id.fab_save);
 
         apiHandler = new ApiHandler();
@@ -66,11 +71,12 @@ public class DetailActivity extends AppCompatActivity {
             itemDescription.setText(todo.getDescription());
             itemDone.setChecked(todo.isDone());
             itemFavourite.setChecked(todo.isFavourite());
+            timeInMilli = todo.getExpiry();
 
-            if (todo.getExpiry() != null) {
+            if (todo.getExpiry() > 0) {
                 @SuppressLint("SimpleDateFormat") SimpleDateFormat sfDate = new SimpleDateFormat("dd.MM.yyyy");
                 @SuppressLint("SimpleDateFormat") SimpleDateFormat sfTime = new SimpleDateFormat("HH:mm");
-                Date parsedDate = new Date(Long.parseLong(todo.getExpiry()));
+                Date parsedDate = new Date(todo.getExpiry());
                 selectedDueDate.setText(sfDate.format(parsedDate));
                 selectedDueTime.setText(sfTime.format(parsedDate));
 
@@ -126,18 +132,47 @@ public class DetailActivity extends AppCompatActivity {
             selectedDueTime.setVisibility(View.VISIBLE);
         });
 
+        contactWrapper.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            intent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE);
+            startActivityForResult(intent, 1);
+        });
+
         fabSave.setOnClickListener(v -> {
             assert todo != null;
             todo.setName(itemName.getText().toString());
             todo.setDescription(itemDescription.getText().toString());
             todo.setDone(itemDone.isChecked());
             todo.setFavourite(itemFavourite.isChecked());
-            todo.setExpiry(String.valueOf(timeInMilli));
+            todo.setExpiry(timeInMilli);
             db.updateTodo(todo.getId(), todo);
             apiHandler.updateTodo(todo.getId(), todo);
 
             Intent mainIntent = new Intent(DetailActivity.this, MainActivity.class);
             DetailActivity.this.startActivity(mainIntent);
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (data != null) {
+            Uri uri = data.getData();
+            System.out.println(uri);
+            if (uri != null) {
+                Cursor c = null;
+                try {
+                    c = getContentResolver().query(uri, new String[] {
+                            ContactsContract.Profile.DISPLAY_NAME,
+                        }, null, null, null);
+                    todo.addContact(uri.getLastPathSegment());
+                } finally {
+                    System.out.println(todo.getContacts());
+                    if (c != null) {
+                        c.close();
+                    }
+                }
+            }
+        }
     }
 }
