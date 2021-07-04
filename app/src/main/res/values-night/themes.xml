@@ -12,6 +12,8 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+        <item name="colorAccent">@color/purple_200</item>
+        <item name="android:textColorHighlight">@color/purple_200</item>
     </style>
 
     <style name="DialogStyle" parent="Theme.MaterialComponents.BottomSheetDialog">

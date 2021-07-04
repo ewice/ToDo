@@ -2,14 +2,14 @@ package com.example.todo;
 
 import android.content.Context;
 import android.content.DialogInterface;
-import android.database.Cursor;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.app.AppCompatDelegate;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,17 +20,14 @@ import com.example.todo.helper.DialogCloseListener;
 import com.example.todo.helper.RecyclerItemTouchHelper;
 import com.example.todo.model.Todo;
 import com.example.todo.util.ApiHandler;
+import com.example.todo.util.Connection;
 import com.example.todo.util.DatabaseHandler;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import java.util.concurrent.ExecutionException;
 
 public class MainActivity extends AppCompatActivity implements DialogCloseListener {
 
@@ -39,21 +36,31 @@ public class MainActivity extends AppCompatActivity implements DialogCloseListen
     private List<Todo> todoList;
     private Context context;
     private ApiHandler apiHandler;
+    private RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
         setTitle("Tasks");
         context = getApplicationContext();
+
+        AsyncTask<String, Boolean, Boolean> isConnected = new Connection().execute();
+        try {
+            if (!isConnected.get()){
+                TextView errorMessage = findViewById(R.id.errorMessage);
+                errorMessage.setVisibility(View.VISIBLE);
+            }
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
 
         db = new DatabaseHandler(this);
         db.openDatabase();
 
         apiHandler = new ApiHandler();
 
-        RecyclerView recyclerView = findViewById(R.id.tasksRecyclerView);
+        recyclerView = findViewById(R.id.tasksRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         toDoAdapter = new ToDoAdapter(db,MainActivity.this, apiHandler);
         recyclerView.setAdapter(toDoAdapter);
@@ -69,8 +76,8 @@ public class MainActivity extends AppCompatActivity implements DialogCloseListen
         } else {
             apiHandler.getAllTodos(toDoAdapter, db);
         }
+        favouriteExpirySort();
         toDoAdapter.setTasks(todoList);
-        FavouriteExpirySort();
 
         fab.setOnClickListener(v -> AddNewTask.newInstance().show(getSupportFragmentManager(), AddNewTask.TAG));
     }
@@ -78,26 +85,37 @@ public class MainActivity extends AppCompatActivity implements DialogCloseListen
     @Override
     public void handleDialogClose(DialogInterface dialog){
         todoList = db.getAllTodos();
-        FavouriteExpirySort();
+        favouriteExpirySort();
+        resetRecyclerViewAdapterAndList();
+    }
+
+    // Reset Adapter
+
+    private void resetRecyclerViewAdapterAndList() {
+        toDoAdapter = new ToDoAdapter(db,MainActivity.this, apiHandler);
+        recyclerView.setAdapter(toDoAdapter);
         toDoAdapter.setTasks(todoList);
+        recyclerView.invalidate();
     }
 
     // Sort Todos
 
-    private void FavouriteExpirySort() {
+    private void favouriteExpirySort() {
         todoList.sort(Comparator
                 .comparing(Todo::isDone)
                 .thenComparing(Todo::isFavourite)
                 .thenComparingLong(Todo::getExpiry)
                 .reversed());
+        resetRecyclerViewAdapterAndList();
     }
 
-    private void ExpiryFavouriteSort() {
+    private void expiryFavouriteSort() {
         todoList.sort(Comparator
                 .comparing(Todo::isDone)
                 .thenComparing(Todo::getExpiry)
                 .thenComparing(Todo::isFavourite)
                 .reversed());
+        resetRecyclerViewAdapterAndList();
     }
 
     // Options Menu
@@ -107,13 +125,11 @@ public class MainActivity extends AppCompatActivity implements DialogCloseListen
         MenuInflater inflater = new MenuInflater(context);
         inflater.inflate(R.menu.menu_context, menu);
         menu.add("Sortieren nach Wichtigkeit und Datum").setOnMenuItemClickListener(item -> {
-            FavouriteExpirySort();
-            toDoAdapter.notifyDataSetChanged();
+            favouriteExpirySort();
             return false;
         });
         menu.add("Sortieren nach Datum und Wichtigkeit").setOnMenuItemClickListener(item -> {
-            ExpiryFavouriteSort();
-            toDoAdapter.notifyDataSetChanged();
+            expiryFavouriteSort();
             return false;
         });
 

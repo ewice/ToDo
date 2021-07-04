@@ -3,11 +3,15 @@ package com.example.todo.util;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.MutableLiveData;
 
 import com.example.todo.adapter.ToDoAdapter;
+import com.example.todo.data.Result;
 import com.example.todo.model.ApiInterface;
 import com.example.todo.model.Todo;
+import com.example.todo.model.User;
 
+import java.io.IOException;
 import java.util.List;
 
 import retrofit2.Call;
@@ -20,7 +24,6 @@ public class ApiHandler {
 
     private final ApiInterface apiInterface;
 
-
     public ApiHandler() {
         Retrofit adapter = new Retrofit.Builder()
                 .baseUrl("http://10.0.2.2:8080/")
@@ -28,6 +31,10 @@ public class ApiHandler {
                 .build();
 
         apiInterface = adapter.create(ApiInterface.class);
+    }
+
+    public ApiInterface getClient() {
+        return apiInterface;
     }
 
     public void createTodo(Todo todo) {

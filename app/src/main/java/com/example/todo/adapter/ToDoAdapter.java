@@ -21,6 +21,7 @@ import com.example.todo.util.ApiHandler;
 import com.example.todo.util.DatabaseHandler;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -80,7 +81,6 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
 
     public void setTasks(List<Todo> todoList) {
         this.todoList = todoList;
-        notifyDataSetChanged();
     }
 
     public Context getContext() {
@@ -121,7 +121,7 @@ public class ToDoAdapter extends RecyclerView.Adapter<ToDoAdapter.ViewHolder> {
     // Expired
     public void isExpired(Todo todo, ViewHolder holder) {
         if (todo.getExpiry() < Calendar.getInstance().getTimeInMillis()) {
-            holder.todoDate.setTextColor(activity.getColor(R.color.teal_200));
+            holder.todoDate.setTextColor(activity.getColor(R.color.warning));
         }
     }
 }

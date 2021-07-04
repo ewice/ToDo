@@ -31,7 +31,8 @@
                 app:layout_constraintTop_toTopOf="parent"
                 android:hint="@string/name"
                 android:autofillHints="@string/name"
-                android:inputType="text"/>
+                android:inputType="text"
+                app:backgroundTint="@color/purple_200" />
 
             <EditText
                 android:id="@+id/description"
@@ -45,7 +46,8 @@
                 app:layout_constraintTop_toBottomOf="@+id/name"
                 android:hint="@string/beschreibung"
                 android:autofillHints="@string/beschreibung"
-                android:inputType="text"/>
+                android:inputType="text"
+                app:backgroundTint="@color/purple_200" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -1,5 +1,6 @@
 package com.example.todo.ui.login;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -8,13 +9,20 @@ import android.util.Patterns;
 
 import com.example.todo.data.LoginRepository;
 import com.example.todo.data.Result;
-import com.example.todo.ui.login.model.LoggedInUser;
+import com.example.todo.model.ApiInterface;
+import com.example.todo.model.User;
 import com.example.todo.R;
+import com.example.todo.util.ApiHandler;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class LoginViewModel extends ViewModel {
 
-    private MutableLiveData<LoginFormState> loginFormState = new MutableLiveData<>();
-    private MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
+    private final MutableLiveData<LoginFormState> loginFormState = new MutableLiveData<>();
+    private final MutableLiveData<LoginResult> loginResult = new MutableLiveData<>();
+    private final ApiInterface apiInterface = new ApiHandler().getClient();
     private LoginRepository loginRepository;
 
     LoginViewModel(LoginRepository loginRepository) {
@@ -30,13 +38,31 @@ public class LoginViewModel extends ViewModel {
     }
 
     public void login(String username, String password) {
-        // can be launched in a separate asynchronous job
-        Result<LoggedInUser> result = loginRepository.login(username, password);
+        MutableLiveData<Result<User>> result = new MutableLiveData<>();
+        User user = new User();
+        user.setEmail(username);
+        user.setPwd(password);
 
-        if (result instanceof Result.Success) {
-            LoggedInUser data = ((Result.Success<LoggedInUser>) result).getData();
-            loginResult.setValue(new LoginResult(new LoggedInUserView(data.getDisplayName())));
-        } else {
+        Call<Boolean> create = apiInterface.login(user);
+        try {
+            create.enqueue(new Callback<Boolean>() {
+                @Override
+                public void onResponse(@NonNull Call<Boolean> call, @NonNull Response<Boolean> response) {
+                    if (response.body() != null) {
+                        User data = ((Result.Success<User>) new Result.Success(user)).getData();
+                        loginResult.setValue(new LoginResult(new LoggedInUserView(data.getEmail() + "asdf")));
+                    } else {
+                        loginResult.setValue(new LoginResult(R.string.login_failed));
+                    }
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<Boolean> call, @NonNull Throwable t) {
+                    loginResult.setValue(new LoginResult(R.string.login_failed));
+                    call.cancel();
+                }
+            });
+        } catch (Exception e) {
             loginResult.setValue(new LoginResult(R.string.login_failed));
         }
     }
@@ -58,13 +84,12 @@ public class LoginViewModel extends ViewModel {
         }
         if (username.contains("@")) {
             return Patterns.EMAIL_ADDRESS.matcher(username).matches();
-        } else {
-            return !username.trim().isEmpty();
         }
+        return false;
     }
 
     // A placeholder password validation check
     private boolean isPasswordValid(String password) {
-        return password != null && password.trim().length() > 5;
+        return password != null && password.trim().length() == 6;
     }
 }

@@ -2,18 +2,18 @@ package com.example.todo.ui.login;
 
 import android.app.Activity;
 
-import androidx.lifecycle.Observer;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
@@ -22,30 +22,39 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.todo.MainActivity;
 import com.example.todo.R;
-import com.example.todo.ui.login.LoginViewModel;
-import com.example.todo.ui.login.LoginViewModelFactory;
-import com.example.todo.databinding.ActivityLoginBinding;
+import com.example.todo.util.Connection;
+
+import java.util.concurrent.ExecutionException;
 
 public class LoginActivity extends AppCompatActivity {
-
     private LoginViewModel loginViewModel;
-    private ActivityLoginBinding binding;
+    private TextView errorMessageLogin;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        errorMessageLogin = findViewById(R.id.errorMessageLogin);
+        AsyncTask<String, Boolean, Boolean> isConnected = new Connection().execute();
 
-        binding = ActivityLoginBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        try {
+            if (!isConnected.get()){
+                Intent intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
+            }
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
 
-        loginViewModel = new ViewModelProvider(this, new LoginViewModelFactory())
-                .get(LoginViewModel.class);
+        loginViewModel = new ViewModelProvider(this, new LoginViewModelFactory()).get(LoginViewModel.class);
 
-        final EditText usernameEditText = binding.username;
-        final EditText passwordEditText = binding.password;
-        final Button loginButton = binding.login;
-        final ProgressBar loadingProgressBar = binding.loading;
+        final EditText usernameEditText = findViewById(R.id.username);
+        final EditText passwordEditText = findViewById(R.id.password);
+        final Button loginButton = findViewById(R.id.login);
+        final ProgressBar loadingProgressBar = findViewById(R.id.loading);
 
         loginViewModel.getLoginFormState().observe(this, loginFormState -> {
             if (loginFormState == null) {
@@ -72,29 +81,47 @@ public class LoginActivity extends AppCompatActivity {
                 updateUiWithUser(loginResult.getSuccess());
             }
             setResult(Activity.RESULT_OK);
-
-            //Complete and destroy login activity once successful
-            finish();
         });
 
         TextWatcher afterTextChangedListener = new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // ignore
-            }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // ignore
-            }
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
 
             @Override
             public void afterTextChanged(Editable s) {
+                loginViewModel.loginDataChanged(
+                        usernameEditText.getText().toString(),
+                        passwordEditText.getText().toString()
+                );
+                errorMessageLogin.setVisibility(View.INVISIBLE);
+            }
+        };
+
+        usernameEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                errorMessageLogin.setVisibility(View.INVISIBLE);
+            }
+        });
+
+
+        usernameEditText.addTextChangedListener(afterTextChangedListener);
+        usernameEditText.setOnFocusChangeListener((v, hasFocus) -> {
+            if (!hasFocus) {
                 loginViewModel.loginDataChanged(usernameEditText.getText().toString(),
                         passwordEditText.getText().toString());
             }
-        };
-        usernameEditText.addTextChangedListener(afterTextChangedListener);
+        });
+
         passwordEditText.addTextChangedListener(afterTextChangedListener);
         passwordEditText.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -106,8 +133,11 @@ public class LoginActivity extends AppCompatActivity {
 
         loginButton.setOnClickListener(v -> {
             loadingProgressBar.setVisibility(View.VISIBLE);
-            loginViewModel.login(usernameEditText.getText().toString(),
-                    passwordEditText.getText().toString());
+            new android.os.Handler().postDelayed(
+                    () -> loginViewModel.login(
+                            usernameEditText.getText().toString(),
+                            passwordEditText.getText().toString()
+                    ), 2000);
         });
     }
 
@@ -115,9 +145,12 @@ public class LoginActivity extends AppCompatActivity {
         String welcome = getString(R.string.welcome) + model.getDisplayName();
         // TODO : initiate successful logged in experience
         Toast.makeText(getApplicationContext(), welcome, Toast.LENGTH_LONG).show();
+        Intent intent = new Intent(this, MainActivity.class);
+        startActivity(intent);
     }
 
     private void showLoginFailed(@StringRes Integer errorString) {
+        errorMessageLogin.setVisibility(View.VISIBLE);
         Toast.makeText(getApplicationContext(), errorString, Toast.LENGTH_SHORT).show();
     }
 }
